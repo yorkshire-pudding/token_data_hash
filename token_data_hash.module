@@ -1,0 +1,45 @@
+<?php
+/**
+ * @mainpage Token Data Hash
+ * Create tokens that will read a hass from a url query and interpret it 
+ * as a comma seperated list of values
+ */
+
+/**
+ * @file
+ * The module file
+ */
+
+/**
+ * Implements hook_token_info().
+ */
+function token_data_hash_token_info() {
+  $info['tokens']['current-page']['hash'] = array(
+    'name' => t('Hash'),
+    'description' => t('A translated hash of a comma seperated list found in a given query string field.'),
+    'dynamic' => TRUE,
+    'type' => 'array',
+  );
+
+  return $info;
+}
+/**
+ * Implements hook_tokens().
+ * Sets up a token that will read a url parameter, decode it as a base 64 string and treat it like an array token.
+ */
+function token_data_hash_tokens($type, $tokens, array $data = array(), array $options = array()) {
+    $replacements = array();
+    $sanitize = !empty($options['sanitize']);
+    if ($type == 'current-page') {
+      if ($query_tokens = token_find_with_prefix($tokens, 'hash')) {
+        foreach ($query_tokens as $name => $original) {
+          $parts = explode(":", $name);
+          if (isset($_GET[$parts[0]])) {
+            $val = explode(",", base64_decode($_GET[$parts[0]]));
+            $replacements += token_generate('array', token_find_with_prefix($query_tokens, $parts[0]), array('array' => $val), $options);
+          }
+        }
+      }
+    }
+    return $replacements;
+}
