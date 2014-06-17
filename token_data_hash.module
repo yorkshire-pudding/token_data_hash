@@ -9,6 +9,17 @@
  * @file
  * The module file
  */
+ 
+/**
+ * Implements hook_help().
+ */
+function token_data_hash_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#token_data_hash':
+      // Return a line-break version of the module README.txt
+      return check_markup(file_get_contents(drupal_get_path('module', 'token_data_hash') . "/README.txt"));
+  }
+}
 
 /**
  * Implements hook_token_info().
@@ -23,6 +34,7 @@ function token_data_hash_token_info() {
 
   return $info;
 }
+
 /**
  * Implements hook_tokens().
  * Sets up a token that will read a url parameter, decode it as a base 64 string and treat it like an array token.
@@ -33,9 +45,12 @@ function token_data_hash_tokens($type, $tokens, array $data = array(), array $op
     if ($type == 'current-page') {
       if ($query_tokens = token_find_with_prefix($tokens, 'hash')) {
         foreach ($query_tokens as $name => $original) {
+          // Seperate out the rest of the token string array should be (0 => URL query variable, 1..$ => parameters for the array token).
           $parts = explode(":", $name);
           if (isset($parts[0]) && isset($_GET[$parts[0]])) {
+            // Decode the string and break it up into an array
             $val = explode(",", base64_decode($_GET[$parts[0]]));
+            // Generate the token as an array using the array parmeters provided or render the array as a whole.
             if ($query_tokens = token_find_with_prefix($query_tokens, $parts[0])) {
               $replacements += token_generate('array', $query_tokens, array('array' => $val), $options);
             }
