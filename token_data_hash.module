@@ -25,9 +25,20 @@ function token_data_hash_help($path, $arg) {
  * Implements hook_token_info().
  */
 function token_data_hash_token_info() {
-  $info['tokens']['current-page']['hash'] = array(
-    'name' => t('Hash'),
-    'description' => t('A translated hash of a comma seperated list found in a given query string field.'),
+  $info['types']['hashes'] = array(
+    'name' => t('Data Hashes'),
+    'description' => t('Comma seperated lists stored in the url query string as the variable "hash".'),
+  );
+  $info['tokens']['hashes']['base64'] = array(
+    'name' => t('Base 64'),
+    'description' => t('A hash encoded in base 64 (Not secure).'),
+    'type' => 'array',
+  );
+  $info['tokens']['hashes']['rijn_ecb'] = array(
+    'name' => t('Encrypted Rijndael 128/ECB'),
+    'description' => t('The hash is encrypted with Rijndael 128 encryption using the ECB encryption mode.
+      The parameter is the password which will be ran through an md5 checksum and used as the encryption key
+      (Only provides minimal security).'),
     'dynamic' => TRUE,
     'type' => 'array',
   );
@@ -42,24 +53,72 @@ function token_data_hash_token_info() {
 function token_data_hash_tokens($type, $tokens, array $data = array(), array $options = array()) {
     $replacements = array();
     $sanitize = !empty($options['sanitize']);
-    if ($type == 'current-page') {
-      if ($query_tokens = token_find_with_prefix($tokens, 'hash')) {
+    if ($type == 'hashes' && isset($_GET['hash'])) {
+      $val = $_GET['hash'];
+      $val = base64_decode($val);
+      foreach ($tokens as $name => $original) {
+        if ($name == 'base64') {
+          $arr = explode(",", $val);
+          $replacements[$original] = token_render_array($arr, $options);
+        }
+      }
+      if ($query_tokens = token_find_with_prefix($tokens, 'base64')) {
+        foreach ($query_tokens as $name => $original) {
+          $arr = explode(",", $val);
+          // Generate the token as an array using the array parmeters provided or render the array as a whole.
+          $replacements += token_generate('array', $query_tokens, array('array' => $arr), $options);
+        }
+      }
+      elseif ($query_tokens = token_find_with_prefix($tokens, 'rijn_ecb')) {
         foreach ($query_tokens as $name => $original) {
           // Seperate out the rest of the token string array should be (0 => URL query variable, 1..$ => parameters for the array token).
           $parts = explode(":", $name);
-          if (isset($parts[0]) && isset($_GET[$parts[0]])) {
-            // Decode the string and break it up into an array
-            $val = explode(",", base64_decode($_GET[$parts[0]]));
-            // Generate the token as an array using the array parmeters provided or render the array as a whole.
-            if ($query_tokens = token_find_with_prefix($query_tokens, $parts[0])) {
-              $replacements += token_generate('array', $query_tokens, array('array' => $val), $options);
-            }
-            else {
-              $replacements[$original] = token_render_array($val, $options);
-            }
+          // Decode the string
+          if (isset($parts[0])) {
+            $plain = _token_data_hash_decrypt($val, $parts[0], MCRYPT_RIJNDAEL_128, MCRYPT_MODE_ECB);
+          }
+          $arr = explode(",", $plain);
+          // Generate the token as an array using the array parmeters provided or render the array as a whole.
+          if ($qt = token_find_with_prefix($query_tokens, $parts[0])) {
+            $replacements += token_generate('array', $qt, array('array' => $arr), $options);
+          }
+          else {
+            $replacements[$original] = token_render_array($arr, $options);
           }
         }
       }
     }
     return $replacements;
+}
+
+/**
+ * Decrypts a string. The key provided will be ran through md5() before being used in mcrypt_decrypt().
+ *
+ * @param string $s
+ *   The encrypted string
+ * @param string $key
+ *   The encryption key
+ * @param int $crypt
+ *   The type of encryption as defined by the mcrypt constants
+ * @param int $mode
+ *   The mode of encrytion as defined by the mcrypt constants
+ * @return string
+ *   The decrypted string stripped of \x0 and \x0c padding characters
+ */
+function _token_data_hash_decrypt($s, $key, $crypt, $mode) {
+  if ($s == "") {
+    return $s;
+  }
+
+  // Control how the string will be padded and its size
+  $key = md5($key);
+
+  // Decrypt the string
+  try {
+    $s = mcrypt_decrypt($crypt, $key, $s, $mode);
+  }
+  catch(Exception $e) {
+  }
+
+  return strtok($s, "\x0\x0c");
 }
