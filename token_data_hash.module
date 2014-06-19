@@ -103,7 +103,7 @@ function token_data_hash_tokens($type, $tokens, array $data = array(), array $op
  * @param int $mode
  *   The mode of encrytion as defined by the mcrypt constants
  * @return string
- *   The decrypted string stripped of \x0 and \x0c padding characters
+ *   The decrypted string trimmed and stripped of \x0 and \x0c padding characters
  */
 function _token_data_hash_decrypt($s, $key, $crypt, $mode) {
   if ($s == "") {
@@ -120,5 +120,5 @@ function _token_data_hash_decrypt($s, $key, $crypt, $mode) {
   catch(Exception $e) {
   }
 
-  return strtok($s, "\x0\x0c");
+  return trim(strtok($s, "\x0\x0c"));
 }
