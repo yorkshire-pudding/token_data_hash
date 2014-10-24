@@ -7,7 +7,7 @@
 
 /**
  * @file
- * The module file
+ * The module file.
  */
 
 /**
@@ -48,7 +48,9 @@ function token_data_hash_token_info() {
 
 /**
  * Implements hook_tokens().
- * Sets up a token that will read a url parameter, decode it as a base 64 string and treat it like an array token.
+ *
+ * Sets up a token that will read a url parameter, decode it as a base 64
+ * string and treat it like an array token.
  */
 function token_data_hash_tokens($type, $tokens, array $data = array(), array $options = array()) {
   $replacements = array();
@@ -64,13 +66,16 @@ function token_data_hash_tokens($type, $tokens, array $data = array(), array $op
     if ($query_tokens = token_find_with_prefix($tokens, 'base64')) {
       foreach ($query_tokens as $name => $original) {
         $arr = explode(",", $val);
-        // Generate the token as an array using the array parmeters provided or render the array as a whole.
-        $replacements += token_generate('array', $query_tokens, array('array' => $arr), $options);
+        // Generate the token as an array or render the array as a whole.
+        $replacements += token_generate(
+          'array',
+          $query_tokens,
+          array('array' => $arr), $options);
       }
     }
     elseif ($query_tokens = token_find_with_prefix($tokens, 'rijn_ecb')) {
       foreach ($query_tokens as $name => $original) {
-        // Separate out the rest of the token string array should be (0 => URL query variable, 1..$ => parameters for the array token).
+        // Separate out the rest of the token string.
         $parts = explode(":", $name);
         // Decode the string.
         if (isset($parts[0])) {
@@ -79,7 +84,11 @@ function token_data_hash_tokens($type, $tokens, array $data = array(), array $op
         $arr = explode(",", $plain);
         // Generate the token as an array or render the array as a whole.
         if ($qt = token_find_with_prefix($query_tokens, $parts[0])) {
-          $replacements += token_generate('array', $qt, array('array' => $arr), $options);
+          $replacements += token_generate(
+            'array',
+            $qt,
+            array('array' => $arr),
+            $options);
         }
         else {
           $replacements[$original] = token_render_array($arr, $options);
@@ -102,7 +111,7 @@ function token_data_hash_tokens($type, $tokens, array $data = array(), array $op
  * @param int $mode
  *   The mode of encrytion as defined by the mcrypt constants.
  * @return string
- *   The decrypted string trimmed and stripped of \x0 and \x0c padding characters.
+ *   The decrypted string trimmed and stripped of padding characters.
  */
 function _token_data_hash_decrypt($s, $key, $crypt, $mode) {
   if ($s == "") {
