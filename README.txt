@@ -30,7 +30,7 @@ INSTALLATION
   https://drupal.org/documentation/install/modules-themes/modules-7
   for further information.
 
-USEAGE
+USAGE
 -------------
 Let's say you want to provide users to a link that will allow them to unsubscribe from a mailing list.
 You want that page to display their name and email address and you need to know an identifyer that is stored
