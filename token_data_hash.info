@@ -1,5 +1,5 @@
 core = "7.x"
-description = "Create tokens that will read a hass from a url query and interpret it as a comma separated list of values"
+description = "Create tokens that will read a hash from a url query and interpret it as a comma separated list of values"
 name = "Token Data Hash"
 package = "Other"
 dependencies[] = token
