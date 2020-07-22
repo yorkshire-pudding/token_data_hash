@@ -74,7 +74,7 @@ function token_data_hash_tokens($type, $tokens, array $data = array(), array $op
         $parts = explode(":", $name);
         // Decode the string.
         if (isset($parts[0])) {
-          $plain = _token_data_hash_decrypt($val, $parts[0], MCRYPT_RIJNDAEL_128, MCRYPT_MODE_ECB);
+          $plain = _token_data_hash_decrypt($val, $parts[0]);
         }
         $arr = explode(",", $plain);
         // Generate the token as an array or render the array as a whole.
@@ -101,15 +101,11 @@ function token_data_hash_tokens($type, $tokens, array $data = array(), array $op
  *   The encrypted string.
  * @param string $key
  *   The encryption key which will be ran through md5() before being used.
- * @param int $crypt
- *   The type of encryption as defined by the mcrypt constants.
- * @param int $mode
- *   The mode of encrytion as defined by the mcrypt constants.
  *
  * @return string
  *   The decrypted string trimmed and stripped of padding characters.
  */
-function _token_data_hash_decrypt($s, $key, $crypt, $mode) {
+function _token_data_hash_decrypt($s, $key) {
   if ($s == "") {
     return $s;
   }
@@ -119,10 +115,10 @@ function _token_data_hash_decrypt($s, $key, $crypt, $mode) {
 
   // Decrypt the string.
   try {
-    $s = mcrypt_decrypt($crypt, $key, $s, $mode);
+    $s = openssl_decrypt($s, 'aes-256-ecb', $key, OPENSSL_RAW_DATA);
   }
   catch (Exception $e) {
   }
 
-  return trim(strtok($s, "\x0\x0c"));
+  return trim($s);
 }
