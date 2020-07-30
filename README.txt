@@ -68,4 +68,5 @@ MAINTAINERS
 -----------
 Current maintainers:
 * Bryan Heisler (geekygnr) - https://drupal.org/user/2775199
-Written on behalf of the University of Waterloo - Department of Advancment - http://uwaterloo.ca/support
+Written on behalf of the University of Waterloo - Department of Advancment
+https://uwaterloo.ca/support/

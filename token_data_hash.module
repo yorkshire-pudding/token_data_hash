@@ -1,9 +1,4 @@
 <?php
-/**
- * @mainpage Token Data Hash
- * Create tokens that will read a hash from a url query and interpret it
- * as a comma separated list of values.
- */
 
 /**
  * @file
@@ -16,7 +11,7 @@
 function token_data_hash_help($path, $arg) {
   switch ($path) {
     case 'admin/help#token_data_hash':
-      // Return a line-break version of the module README.txt
+      // Return a line-break version of the module README.txt.
       return check_markup(file_get_contents(drupal_get_path('module', 'token_data_hash') . "/README.txt"));
   }
 }
@@ -110,6 +105,7 @@ function token_data_hash_tokens($type, $tokens, array $data = array(), array $op
  *   The type of encryption as defined by the mcrypt constants.
  * @param int $mode
  *   The mode of encrytion as defined by the mcrypt constants.
+ *
  * @return string
  *   The decrypted string trimmed and stripped of padding characters.
  */
