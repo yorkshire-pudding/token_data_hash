@@ -8,18 +8,19 @@
 /**
  * Implements hook_help().
  */
-function token_data_hash_help($path, $arg) {
-  switch ($path) {
-    case 'admin/help#token_data_hash':
-      // Return a line-break version of the module README.txt.
-      return check_markup(file_get_contents(drupal_get_path('module', 'token_data_hash') . "/README.txt"));
+function token_data_hash_help($route_name, \Drupal\Core\Routing\RouteMatchInterface $route_match) {
+  if ($route_name == 'help.page.token_data_hash') {
+    $module_handler = \Drupal::service('module_handler');
+    $path = $module_handler->getModule('token_data_hash')->getPath();
+    $file = file_get_contents($path . "/README.md");
+    return check_markup($file);
   }
 }
 
 /**
  * Implements hook_token_info().
  */
-function token_data_hash_token_info() {
+function token_data_hash_token_info(): array {
   $info['types']['hashes'] = array(
     'name' => t('Data Hashes'),
     'description' => t('Comma separated lists stored in the url query string as the variable "hash".'),
@@ -29,9 +30,9 @@ function token_data_hash_token_info() {
     'description' => t('A hash encoded in base 64 (Not secure).'),
     'type' => 'array',
   );
-  $info['tokens']['hashes']['rijn_ecb'] = array(
-    'name' => t('Encrypted Rijndael 128/ECB'),
-    'description' => t('The hash is encrypted with Rijndael 128 encryption using the ECB encryption mode.
+  $info['tokens']['hashes']['open_ssl'] = array(
+    'name' => t('OpenSSL AES 256 ECB'),
+    'description' => t('The hash is encrypted with OpenSSL encryption using the aes-256-ecb encryption mode.
       The parameter is the password which will be ran through an md5 checksum and used as the encryption key
       (Only provides minimal security).'),
     'dynamic' => TRUE,
@@ -47,10 +48,10 @@ function token_data_hash_token_info() {
  * Sets up a token that will read a url parameter, decode it as a base 64
  * string and treat it like an array token.
  */
-function token_data_hash_tokens($type, $tokens, array $data = array(), array $options = array()) {
+function token_data_hash_tokens($type, $tokens, array $data, array $options, \Drupal\Core\Render\BubbleableMetadata $bubbleable_metadata): array {
   $replacements = array();
-  if ($type == 'hashes' && isset($_GET['hash'])) {
-    $val = $_GET['hash'];
+  $val = \Drupal::request()->get('hash');
+  if ($type == 'hashes' && !empty($val)) {
     $val = base64_decode($val);
     foreach ($tokens as $name => $original) {
       if ($name == 'base64') {
@@ -58,17 +59,21 @@ function token_data_hash_tokens($type, $tokens, array $data = array(), array $op
         $replacements[$original] = token_render_array($arr, $options);
       }
     }
-    if ($query_tokens = token_find_with_prefix($tokens, 'base64')) {
+    if ($query_tokens = \Drupal::token()->findWithPrefix($tokens, 'base64')) {
       foreach ($query_tokens as $name => $original) {
         $arr = explode(",", $val);
         // Generate the token as an array or render the array as a whole.
-        $replacements += token_generate(
+
+        $replacements += \Drupal::token()->generate(
           'array',
           $query_tokens,
-          array('array' => $arr), $options);
+          array('array' => $arr),
+          $options,
+          $bubbleable_metadata
+        );
       }
     }
-    elseif ($query_tokens = token_find_with_prefix($tokens, 'rijn_ecb')) {
+    elseif ($query_tokens = \Drupal::token()->findWithPrefix($tokens, 'open_ssl')) {
       foreach ($query_tokens as $name => $original) {
         // Separate out the rest of the token string.
         $parts = explode(":", $name);
@@ -78,12 +83,14 @@ function token_data_hash_tokens($type, $tokens, array $data = array(), array $op
         }
         $arr = explode(",", $plain);
         // Generate the token as an array or render the array as a whole.
-        if ($qt = token_find_with_prefix($query_tokens, $parts[0])) {
-          $replacements += token_generate(
+        if ($qt = \Drupal::token()->findWithPrefix($query_tokens, $parts[0])) {
+          $replacements += \Drupal::token()->generate(
             'array',
             $qt,
             array('array' => $arr),
-            $options);
+            $options,
+            $bubbleable_metadata
+          );
         }
         else {
           $replacements[$original] = token_render_array($arr, $options);
@@ -105,7 +112,7 @@ function token_data_hash_tokens($type, $tokens, array $data = array(), array $op
  * @return string
  *   The decrypted string trimmed and stripped of padding characters.
  */
-function _token_data_hash_decrypt($s, $key) {
+function _token_data_hash_decrypt(string $s, string $key): string {
   if ($s == "") {
     return $s;
   }

@@ -1,0 +1,21 @@
+{
+  "name": "drupal/token_data_hash",
+  "type": "drupal-module",
+  "description": "This module provides tokens based on values hashed into a url parameter.",
+  "keywords": ["Drupal"],
+  "license": "GPL-2.0+",
+  "homepage": "https://www.drupal.org/project/token_data_hash",
+  "authors": [
+    {
+      "name": "Bryan Heisler (geekygnr)",
+      "homepage": "https://www.drupal.org/u/geekygnr",
+      "role": "Maintainer"
+    }
+  ],
+  "support": {
+    "issues": "https://www.drupal.org/project/issues/token_data_hash",
+    "source": "http://cgit.drupalcode.org/token_data_hash"
+  },
+  "require": {},
+  "require-dev": {}
+}

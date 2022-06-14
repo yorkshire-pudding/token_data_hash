@@ -1,0 +1,8 @@
+description: Create tokens that will read a hash from a url query and interpret it as a comma separated list of values
+name: Token Data Hash
+type: module
+package: Other
+core: 8.x
+core_version_requirement: ^8 || ^9
+dependencies:
+  - drupal:token
