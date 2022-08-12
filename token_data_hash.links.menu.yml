@@ -1,0 +1,6 @@
+token_data_hash.token_data_hash_config_form:
+  title: 'Token Data Hash'
+  route_name: token_data_hash.token_data_hash_config_form
+  description: 'Configuration and helper features for the token data hash module'
+  parent: system.admin_config_development
+  weight: 99

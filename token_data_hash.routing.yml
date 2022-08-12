@@ -1,0 +1,9 @@
+token_data_hash.token_data_hash_config_form:
+  path: '/admin/config/development/token_data_hash'
+  defaults:
+    _form: '\Drupal\token_data_hash\Form\ConfigForm'
+    _title: 'Token Data Hash Config'
+  requirements:
+    _permission: 'access administration pages'
+  options:
+    _admin_route: TRUE
