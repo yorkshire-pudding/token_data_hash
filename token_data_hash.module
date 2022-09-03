@@ -53,6 +53,7 @@ function token_data_hash_tokens($type, $tokens, array $data, array $options, \Dr
   $param_name = Drupal::config('token_data_hash.config')->get('url_param');
   $val = \Drupal::request()->get($param_name);
   if ($type == 'hashes' && !empty($val)) {
+    $bubbleable_metadata->addCacheContexts(['url.query_args:' . $param_name]);
     $val = base64_decode($val);
     foreach ($tokens as $name => $original) {
       if ($name == 'base64') {
