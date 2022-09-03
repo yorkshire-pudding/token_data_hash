@@ -1,0 +1,14 @@
+<?php
+ /**
+  * @file
+  * Install file.
+  */
+
+/**
+ * Implements hook_install().
+ */
+ function token_data_hash_install() {
+   $config = Drupal::configFactory()->getEditable('token_data_hash.config');
+   $config->set('url_param', 'hash');
+   $config->save();
+ }
