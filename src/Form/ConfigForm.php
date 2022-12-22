@@ -4,6 +4,8 @@ namespace Drupal\token_data_hash\Form;
 
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\token_data_hash\Base64Encoder;
+use Drupal\token_data_hash\OpenSSLEncoder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -108,10 +110,13 @@ class ConfigForm extends ConfigFormBase {
       }
     }
     $values = implode(',', $values);
-    if ($form_state->getValue('open_ssl')) {
-      $values = _token_data_hash_encrypt($values, $form_state->getValue('key'));
+    $encoder = new Base64Encoder();
+    if ($form_state->getValue('type') == 'open_ssl') {
+      $key = $form_state->getValue('key');
+      $encoder = new OpenSSLEncoder($key);
     }
-    $form['generate']['hash']['#value'] = base64_encode($values);
+    $msg = $encoder->encode($values);
+    $form['generate']['hash']['#value'] = $msg;
     return $form['generate']['hash'];
   }
 

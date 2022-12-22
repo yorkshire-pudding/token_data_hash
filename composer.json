@@ -16,6 +16,8 @@
     "issues": "https://www.drupal.org/project/issues/token_data_hash",
     "source": "http://cgit.drupalcode.org/token_data_hash"
   },
-  "require": {},
+  "require": {
+      "ext-json": "*"
+  },
   "require-dev": {}
 }

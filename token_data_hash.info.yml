@@ -3,6 +3,5 @@ name: Token Data Hash
 type: module
 package: Other
 core: 8.x
-core_version_requirement: ^8 || ^9
-dependencies:
-  - drupal:token
+core_version_requirement: ^8 || ^9 || ^10
+configure: token_data_hash.token_data_hash_config_form

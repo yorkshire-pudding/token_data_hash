@@ -50,97 +50,62 @@ function token_data_hash_token_info(): array {
  */
 function token_data_hash_tokens($type, $tokens, array $data, array $options, \Drupal\Core\Render\BubbleableMetadata $bubbleable_metadata): array {
   $replacements = array();
+  if ($type != 'hashes') {
+    return $replacements;
+  }
   $param_name = Drupal::config('token_data_hash.config')->get('url_param');
-  $val = \Drupal::request()->get($param_name);
-  if ($type == 'hashes' && !empty($val)) {
-    $bubbleable_metadata->addCacheContexts(['url.query_args:' . $param_name]);
-    $val = base64_decode($val);
-    foreach ($tokens as $name => $original) {
-      if ($name == 'base64') {
-        $arr = explode(",", $val);
-        $replacements[$original] = token_render_array($arr, $options);
-      }
+  $bubbleable_metadata->addCacheContexts(['url.query_args:' . $param_name]);
+  $origVal = \Drupal::request()->get($param_name);
+  if (empty($origVal)) {
+    return $replacements;
+  }
+  $encoder = new \Drupal\token_data_hash\Base64Encoder();
+  $val = $encoder->decode($origVal);
+  foreach ($tokens as $name => $original) {
+    if ($name == 'base64') {
+      $arr = explode(",", $val);
+      $replacements[$original] = token_render_array($arr, $options);
     }
-    if ($query_tokens = \Drupal::token()->findWithPrefix($tokens, 'base64')) {
-      foreach ($query_tokens as $name => $original) {
-        $arr = explode(",", $val);
-        // Generate the token as an array or render the array as a whole.
+  }
+  if ($query_tokens = \Drupal::token()->findWithPrefix($tokens, 'base64')) {
+    foreach ($query_tokens as $name => $original) {
+      $arr = explode(",", $val);
+      // Generate the token as an array or render the array as a whole.
 
+      $replacements += \Drupal::token()->generate(
+        'array',
+        $query_tokens,
+        array('array' => $arr),
+        $options,
+        $bubbleable_metadata
+      );
+    }
+  }
+  if ($query_tokens = \Drupal::token()->findWithPrefix($tokens, 'open_ssl')) {
+    foreach ($query_tokens as $name => $original) {
+      // Separate out the rest of the token string.
+      $parts = explode(":", $name);
+      // Decode the string.
+      if (isset($parts[0])) {
+        $encoder = new \Drupal\token_data_hash\OpenSSLEncoder($parts[0]);
+        $plain = $encoder->decode($origVal);
+      }
+      $arr = explode(",", $plain);
+      // Generate the token as an array or render the array as a whole.
+      if ($qt = \Drupal::token()->findWithPrefix($query_tokens, $parts[0])) {
         $replacements += \Drupal::token()->generate(
           'array',
-          $query_tokens,
+          $qt,
           array('array' => $arr),
           $options,
           $bubbleable_metadata
         );
       }
-    }
-    elseif ($query_tokens = \Drupal::token()->findWithPrefix($tokens, 'open_ssl')) {
-      foreach ($query_tokens as $name => $original) {
-        // Separate out the rest of the token string.
-        $parts = explode(":", $name);
-        // Decode the string.
-        if (isset($parts[0])) {
-          $plain = _token_data_hash_decrypt($val, $parts[0]);
-        }
-        $arr = explode(",", $plain);
-        // Generate the token as an array or render the array as a whole.
-        if ($qt = \Drupal::token()->findWithPrefix($query_tokens, $parts[0])) {
-          $replacements += \Drupal::token()->generate(
-            'array',
-            $qt,
-            array('array' => $arr),
-            $options,
-            $bubbleable_metadata
-          );
-        }
-        else {
-          $replacements[$original] = token_render_array($arr, $options);
-        }
+      else {
+        $replacements[$original] = token_render_array($arr, $options);
       }
     }
   }
   return $replacements;
 }
 
-/**
- * Decrypts a string.
- *
- * @param string $s
- *   The encrypted string.
- * @param string $key
- *   The encryption key which will be ran through md5() before being used.
- *
- * @return string
- *   The decrypted string trimmed and stripped of padding characters.
- */
-function _token_data_hash_decrypt(string $s, string $key): string {
-  if ($s == "") {
-    return $s;
-  }
-
-  // Control how the string will be padded and its size.
-  $key = md5($key);
-
-  // Decrypt the string.
-  try {
-    $s = openssl_decrypt($s, 'aes-256-ecb', $key, OPENSSL_RAW_DATA);
-  }
-  catch (Exception $e) {
-  }
-
-  return trim($s);
-}
-
-
-function _token_data_hash_encrypt(string $s, string $key): string {
-  if ($s == "") {
-    return $s;
-  }
-
-  $key = md5($key);
-
-  $s = openssl_encrypt($s, 'aes-256-ecb', $key, OPENSSL_RAW_DATA);
-
-  return trim($s);
-}
